@@ -414,3 +414,73 @@ cost_matrix_lasso
 cost_matrix_en
 cost_matrix_svm
 cost_matrix_gbm
+
+
+
+##################################### Model Diagnostic ########################
+########################## GLM diagostic ##############################
+glmDiag_sq <- glm.diag(fit_step_sq)
+glmDiag_cat <- glm.diag(fit_step2)
+glmDiag_sq_df <- data.frame(res = glmDiag_sq$res,
+                            rd = glmDiag_sq$rd,
+                            rp =glmDiag_sq$rp,
+                            cook = glmDiag_sq$cook,
+                            h = glmDiag_sq$h)
+
+glmDiag_cat_df <- data.frame(res = glmDiag_cat$res,
+                            rd = glmDiag_cat$rd,
+                            rp =glmDiag_cat$rp,
+                            cook = glmDiag_cat$cook,
+                            h = glmDiag_cat$h)
+
+plot(glmDiag_sq$h/(1 - glmDiag_sq$h),glmDiag_sq$cook)
+
+plot(x = NULL)
+
+library(ggplot2)
+sq_cook <- ggplot(data = glmDiag_sq_df, mapping = aes(x=cook)) + 
+                    geom_histogram(bins =90) + 
+                    geom_vline(xintercept = 0.16, linetype="dotted", size = 1) +
+                    theme_bw()
+
+cat_cook <- ggplot(data = glmDiag_cat_df, mapping = aes(x=cook)) + 
+  geom_histogram(bins =90) + 
+  geom_vline(xintercept = 0.143, linetype="dotted", size = 1) +
+  theme_bw()
+
+sq_cat_diag <- rbind(glmDiag_sq_df, glmDiag_cat_df)
+sq_cat_diag$model <- c(rep("BMI Category", nrow(glmDiag_sq_df)),
+                       rep("BMI Squared", nrow(glmDiag_cat_df)))
+cat_cook
+#abline(v = pf(0.5, df1 = 8, 993))
+
+
+ggplot(data = sq_cat_diag, mapping = aes(x = cook, fill=model)) + 
+  geom_histogram(bins =90, alpha=0.4, position = "identity") + 
+  #geom_vline(xintercept = 0.143, linetype="dotted", size = 1, col="red") +
+  theme_bw()
+
+ggplot(data = sq_cat_diag, mapping = aes(x=h/(1-h),y = cook, col=model)) + 
+  geom_point(alpha = 0.6) + 
+  #geom_vline(xintercept = 0.143, linetype="dotted", size = 1, col="red") +
+  theme_bw()
+
+library(boot)
+glm.diag.plots(fit_step2)
+glm.diag.plots(fit_step_sq)
+library(jtools)
+
+
+jtools::plot_summs(fit_step_sq, scale=T,inner_ci_level = .9,plot.distributions = TRUE)
+jtools::plot_summs(fit_step2, scale=T,inner_ci_level = .9,plot.distributions = TRUE)
+
+
+jtools::plot_summs(fit_step_sq, fit_step2, scale=T,inner_ci_level = .9, model.names = c("Model 1", "Model 2"))
+jtools::plot_summs(fit_step2, scale=T,inner_ci_level = .9,plot.distributions = TRUE)
+
+summ(fit_step2,vifs = TRUE)
+summ(fit_step_sq, vifs = TRUE)
+
+
+export_summs(fit_step2, fit_step_sq, scale = TRUE, to.file = "docx", file.name = "./test.docx", model.names = c("Model1 (BMI as categorical data)", "Model2 (BMI^2 introduced)"))
+
